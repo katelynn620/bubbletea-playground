@@ -1,10 +1,8 @@
-// copy from example
-package main
+package bubble
 
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -17,7 +15,7 @@ const listHeight = 14
 var (
 	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
 	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
+	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("26"))
 	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
@@ -50,10 +48,6 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(str))
 }
 
-func NewTitleBox(title string) titleModel {
-	return titleModel{width: 20, title: title}
-}
-
 type titleModel struct {
 	width int
 	title string
@@ -61,6 +55,10 @@ type titleModel struct {
 
 func (t *titleModel) SetWidth(width int) {
 	t.width = width
+}
+
+func (t *titleModel) SetTitle(title string) {
+	t.title = title
 }
 
 func (t *titleModel) View() string {
@@ -74,18 +72,22 @@ func (t *titleModel) View() string {
 	return style.Render(t.title)
 }
 
-type model struct {
+type MenuModel struct {
 	list     list.Model
-	choice   string
-	quitting bool
+	Choice   string
+	Quitting bool
 	title    titleModel
 }
 
-func (m model) Init() tea.Cmd {
+func NewTitleBox(title string) titleModel {
+	return titleModel{width: 20, title: title}
+}
+
+func (m MenuModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
@@ -95,13 +97,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "q", "ctrl+c":
-			m.quitting = true
+			m.Quitting = true
 			return m, tea.Quit
 
 		case "enter":
 			i, ok := m.list.SelectedItem().(item)
 			if ok {
-				m.choice = string(i)
+				m.Choice = string(i)
 			}
 			return m, tea.Quit
 		}
@@ -112,35 +114,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() string {
-	if m.choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
+func (m MenuModel) View() string {
+	if m.Choice != "" {
+		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.Choice))
 	}
-	if m.quitting {
+	if m.Quitting {
 		return quitTextStyle.Render("Not hungry? That’s cool.")
 	}
 
 	return m.title.View() + "\n\n" + m.list.View()
 }
 
-func main() {
-	items := []list.Item{
-		item("Ramen"),
-		item("Tomato Soup"),
-		item("Hamburgers"),
-		item("Cheeseburgers"),
-		item("Currywurst"),
-		item("Okonomiyaki"),
-		item("Pasta"),
-		item("Fillet Mignon"),
-		item("Caviar"),
-		item("Just Wine"),
+func NewMenuModel(title string, menuItems []string) MenuModel {
+	var items []list.Item
+	for _, i := range menuItems {
+		items = append(items, item(i))
 	}
-
 	const defaultWidth = 20
 
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-	l.Title = "What do you want for dinner?"
+	l.Title = title
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
@@ -149,10 +142,5 @@ func main() {
 
 	t := NewTitleBox("Hello Kitty")
 
-	m := model{list: l, title: t}
-
-	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	}
+	return MenuModel{list: l, title: t}
 }
