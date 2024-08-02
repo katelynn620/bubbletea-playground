@@ -18,7 +18,6 @@ var (
 	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("26"))
 	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
 type item string
@@ -115,13 +114,6 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m MenuModel) View() string {
-	if m.Choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.Choice))
-	}
-	if m.Quitting {
-		return quitTextStyle.Render("Not hungry? That’s cool.")
-	}
-
 	return m.title.View() + "\n\n" + m.list.View()
 }
 

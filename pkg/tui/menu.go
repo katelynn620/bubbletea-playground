@@ -15,11 +15,16 @@ func NewMenu(title string, items []string) (string, error) {
 		return "", fmt.Errorf("error running program: %s", err)
 	}
 
-	if m.(bubble.MenuModel).Quitting {
+	finalModel, ok := m.(bubble.MenuModel)
+	if !ok {
+		return "", errors.New("error: could not assert model")
+	}
+
+	if finalModel.Quitting {
 		return "", errors.New("user quit the program")
 	}
 
-	return m.(bubble.MenuModel).Choice, nil
+	return finalModel.Choice, nil
 }
 
 func NewMultipleMenu(title string, items []string) ([]string, error) {
@@ -31,7 +36,7 @@ func NewMultipleMenu(title string, items []string) ([]string, error) {
 
 	finalModel, ok := m.(bubble.MutipleMenuModel)
 	if !ok {
-		return nil, errors.New("Error: Could not assert model.")
+		return nil, errors.New("error: could not assert model")
 	}
 
 	if finalModel.Quitting {
